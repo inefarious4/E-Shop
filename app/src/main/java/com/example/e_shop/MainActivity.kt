@@ -3,10 +3,13 @@ package com.example.e_shop
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.launch
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,7 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,6 +34,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -43,6 +50,18 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.e_shop.ui.theme.EShopTheme
 import com.example.e_shop.ui.theme.buttonTextStyle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+data class BannerItem(val id: Int, val image: Int, val contentDescription: String)
+
+val bannerItems = listOf(
+    BannerItem(1, R.drawable.b1, "Banner 1"),
+    BannerItem(2, R.drawable.b2, "Banner 2"),
+    BannerItem(3, R.drawable.b3, "Banner 3"),
+    BannerItem(4, R.drawable.b4, "Banner 4"),
+    BannerItem(5, R.drawable.b5, "Banner 5"),
+)
 
 data class Item(val id: Int, val title: String, val description: String, val image: Int, val price: Double)
 
@@ -50,7 +69,9 @@ val items = listOf(
     Item(1, "Yoasobi - Asia Tour 2024-2025", "Tanggal 21-06-2025", R.drawable.c1, 100.0),
     Item(2, "Baby Monster - HELLO MONSTER", "Tanggal 02-07-2025", R.drawable.c2, 150.0),
     Item(3, "Kyuhyun - COLORS", "Tanggal 18-07-2025", R.drawable.c3, 90.0),
-)
+    Item(4, "2NE1 - Welcome Back Concert", "Tanggal 26-07-2025", R.drawable.b3, 120.0),
+    Item(5, "GREENDAY - World Tour 2025", "Tanggal 08-08-2025", R.drawable.b1, 115.0),
+    )
 
 fun getItemById(itemId: Int): Item? {
     return items.find { it.id == itemId }
@@ -107,11 +128,61 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+fun BannerItem(item: BannerItem) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth() // Mengisi lebar parent
+            .height(150.dp)
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = item.image),
+            contentDescription = item.contentDescription,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+@Composable
+fun BannerRow(items: List<BannerItem>) {
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = Int.MAX_VALUE / 2)
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(key1 = items) {
+        while (true) {
+            delay(3000) // Delay antara setiap scroll
+            coroutineScope.launch {
+                val currentItem = listState.firstVisibleItemIndex
+                val nextItem = currentItem + 1
+                listState.animateScrollToItem(nextItem)
+            }
+        }
+    }
+
+    LazyRow(
+        state = listState,
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        userScrollEnabled = false,
+        contentPadding = PaddingValues(horizontal = 0.dp) // Menghilangkan padding horizontal
+    ) {
+        items(count = Int.MAX_VALUE, itemContent = { index ->
+            val itemIndex = index % items.size
+            BannerItem(item = items[itemIndex])
+        })
+    }
+}
+
+@Composable
 fun ItemListScreen(navController: NavController) {
-    LazyColumn {
-        items(items) { item ->
-            ItemCard(item = item) {
-                navController.navigate("detail/${item.id}")
+    Column {
+        BannerRow(items = bannerItems)
+        LazyColumn {
+            items(items) { item ->
+                ItemCard(item = item) {
+                    navController.navigate("detail/${item.id}")
+                }
             }
         }
     }
